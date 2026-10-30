@@ -5,7 +5,13 @@ Enter a clinical role and task to find relevant patient facts, linked source pas
 
 ## Setup
 
-### Option 1: Run locally
+### Option 1: Open the Vercel demo (recommended)
+
+**Start here: [Open Clinical Summary Desk](https://aimtoru-eight.vercel.app)** — no local installation required.
+
+The hosted demo runs roughly the same version; its interface and available features may differ from the latest repository build. For a reproducible run of the repository version, use the local setup below. The jury guide below describes that local build.
+
+### Option 2: Run locally
 
 With **Python 3.12+**, **Node.js 22+** (including npm), and Git installed:
 
@@ -20,12 +26,6 @@ python run.py
 On macOS/Linux use `python3` if needed. The first run installs dependencies and builds the interface; setup and Gemini requests need internet access. Open **http://127.0.0.1:8000** when the server says `ready`. Stop with **Ctrl+C**.
 
 Later starts: `python run.py --skip-setup`. To replace keys, open **Gemini keys** on the search screen. If a patient is already loaded, restart the app after saving. Terminal configuration is also available: `python run.py --skip-setup --configure-keys`. After pulling changes, run `python run.py` again. For a different port, add `--port 8001`.
-
-### Option 2: Open the hosted demo
-
-Try the app without local installation: **[Open the Vercel demo](https://aimtoru-eight.vercel.app)**.
-
-The hosted demo runs roughly the same version; its interface and available features may differ from the latest repository build. The local setup above is the reproducible submission version. The jury guide below describes that local build.
 
 ## Jury guide
 
