@@ -5,6 +5,8 @@ Enter a clinical role and task to find relevant patient facts, linked source pas
 
 ## Setup
 
+### Option 1: Run locally
+
 With **Python 3.12+**, **Node.js 22+** (including npm), and Git installed:
 
 ```sh
@@ -18,6 +20,12 @@ python run.py
 On macOS/Linux use `python3` if needed. The first run installs dependencies and builds the interface; setup and Gemini requests need internet access. Open **http://127.0.0.1:8000** when the server says `ready`. Stop with **Ctrl+C**.
 
 Later starts: `python run.py --skip-setup`. To replace keys, open **Gemini keys** on the search screen. If a patient is already loaded, restart the app after saving. Terminal configuration is also available: `python run.py --skip-setup --configure-keys`. After pulling changes, run `python run.py` again. For a different port, add `--port 8001`.
+
+### Option 2: Open the hosted demo
+
+Try the app without local installation: **[Open the Vercel demo](https://aimtoru-eight.vercel.app)**.
+
+The hosted demo runs roughly the same version; its interface and available features may differ from the latest repository build. The local setup above is the reproducible submission version. The jury guide below describes that local build.
 
 ## Jury guide
 
@@ -34,6 +42,69 @@ Imports are stored locally in ignored `backend/.cache/imports/` and survive rest
 Gemini powers semantic retrieval (`gemini-embedding-001`) and checked ranking/summary calls (`gemini-flash-lite-latest`). Python rules build source-linked evidence during import (`blocks14/prep`). A role/task decision graph selects questions; the backend retrieves passages, checks polarity and chronology, and calculates supported values (`backend/app`). React displays results and citations (`frontend`). The Python server serves both the built interface and API.
 
 Cloud requests pass through the de-identification gate. The jury launcher selects Gemini; no Claude or Ollama configuration is needed. If Gemini is unavailable or rate-limited, the backend can temporarily fall back to keyword retrieval and templates; a configured key does not guarantee that every request uses a model. Import extraction remains rules-based, so unsupported narrative facts may be missed. The supplied record is evaluated locally; no patient-containing reports are published. This prototype does not claim all challenge metrics are satisfied.
+
+### Backend architecture
+
+The diagrams describe the local build in this repository. Imported files and API keys stay outside Git; selected clinical text is sent to Gemini through the outbound de-identification gate.
+
+```mermaid
+flowchart TD
+    UI["React interface"] --> API["Python HTTP server · app/server.py"]
+    API --> Import["Import validation · app/importer.py"]
+    Import --> Prep["Evidence preparation · blocks14/prep
+Normalize, segment, extract structured facts"]
+    Import --> Store[("Local imported records and evidence cache")]
+    Prep --> Store
+    Store --> Retrieve["Retrieval · app/remarker.py
+Keywords, codes, sections and semantic similarity"]
+    API --> Plan["Task planning · app/prompt_analysis.py
+Role/task decision graph"]
+    Plan --> Retrieve
+    Retrieve --> Final["Finalization · app/summary.py
+Evidence checks, ranking and summaries"]
+    Retrieve <--> Gate["Outbound de-identification gate"]
+    Final <--> Gate
+    Gate <--> Gemini["Gemini API
+Embeddings and language-model calls"]
+    Final --> Result["Facts, documentation status, contradictions
+and source passage references"]
+    Result --> UI
+```
+
+### How an assessment works
+
+Import begins as soon as the user selects the patient folder, so preparation can run while they write the task. The app retains source passage references throughout the pipeline so a result can be opened in its original document.
+
+```mermaid
+sequenceDiagram
+    actor Jury
+    participant UI as React interface
+    participant API as Python backend
+    participant Prep as Import and indexing
+    participant Model as Gemini via de-identification gate
+    Jury->>UI: Select patient folder
+    UI->>API: POST /api/import
+    API->>Prep: Validate and store files; prepare evidence
+    par Prepare retrieval
+        Prep->>Model: Request document embeddings
+        Model-->>Prep: Embeddings or API failure
+    and Write the task
+        Jury->>UI: Enter role and clinical task
+    end
+    Prep-->>API: Searchable record and processing status
+    API-->>UI: Import confirmation and warnings
+    Note over API,Prep: If embeddings are delayed, keyword search is available<br/>and semantic indexing continues in the background.
+    Jury->>UI: Generate assessment
+    UI->>API: POST /api/assess
+    API->>API: Select questions using the decision graph
+    API->>API: Retrieve passages; check polarity, dates and evidence
+    API->>Model: Check and summarize retrieved evidence
+    Model-->>API: Model output or API failure
+    API->>API: Validate claims and references; use templates if needed
+    API-->>UI: Results, citations, contradictions and processing status
+    Jury->>UI: Open a citation or contradiction
+    UI-->>Jury: Display original source passages
+```
 
 ## Development checks
 
