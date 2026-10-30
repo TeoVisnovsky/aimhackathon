@@ -22,10 +22,10 @@ Later starts: `python run.py --skip-setup`. To replace keys, open **Gemini keys*
 ## Jury guide
 
 1. Click **Import patient folder** and select the supplied patient directory containing `patient.json` and `documents/`, not the entire challenge repository. No challenge data is included here.
-2. Wait for the confirmation. Name and birth date are filled automatically. The first import builds the Gemini search index; quota limits can delay indexing.
-3. Enter your role and task, or paste a challenge situation's title and description, and submit.
+2. Import starts processing immediately. Write your role and task below while it runs; the assessment button becomes available when import finishes. The first import builds the Gemini search index; quota limits can delay indexing.
+3. Enter your role and task, or paste a challenge situation's title and description, and click **Generate assessment**.
 4. Read the relevant facts and documentation status. Click a linked fact for its original passage; open a contradiction to compare its sources.
-5. Use **New search** for another situation. Leave name and birth date empty to use the last imported patient. Switch English/German in the header.
+5. Use **New search** for another situation. The last imported patient is selected automatically; no name or date of birth entry is needed. Switch English/German in the header.
 
 Imports are stored locally in ignored `backend/.cache/imports/` and survive restarts. A fresh clone starts without a patient. Use only synthetic data. Never commit patient folders, caches, prepared evidence, or patient-containing reports.
 

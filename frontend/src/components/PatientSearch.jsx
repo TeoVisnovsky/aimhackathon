@@ -70,8 +70,6 @@ function CrossLogo() {
 
 export function PatientSearch({ onFound }) {
   const { lang, setLang, t } = useLang();
-  const [name, setName] = useState('');
-  const [birth, setBirth] = useState('');
   const [taskText, setTaskText] = useState('');
   const [focus, setFocus] = useState(null);
   const [error, setError] = useState(null);
@@ -81,8 +79,6 @@ export function PatientSearch({ onFound }) {
   const [importNote, setImportNote] = useState(null);
 
   const charEls = useRef({});
-  const nameRef = useRef(null);
-  const birthRef = useRef(null);
   const taskRef = useRef(null);
   const buttonRef = useRef(null);
   const sceneRef = useRef(null);
@@ -109,8 +105,6 @@ export function PatientSearch({ onFound }) {
   if (success) mode = 'success';
   else if (step) mode = 'searching';
   else if (error) mode = 'error';
-  else if (focus === 'name') mode = 'name';
-  else if (focus === 'birth') mode = 'birthday';
   else if (focus === 'task') mode = 'task';
 
   const modeRef = useRef(mode);
@@ -204,7 +198,7 @@ export function PatientSearch({ onFound }) {
     }
     setStep('searching');
     try {
-      const dataset = await assess({ name: name.trim(), birthDate: birth, task, lang: next });
+      const dataset = await assess({ name: '', birthDate: '', task, lang: next });
       setStep(null);
       finish(dataset, dataset.tasks[0]);
     } catch (err) {
@@ -219,13 +213,11 @@ export function PatientSearch({ onFound }) {
     setError(null);
     setImportNote(null);
     setImporting(true);
+    taskRef.current?.focus();
     try {
       const r = await importPatient(list, lang);
-      setName(r.patient.name);
-      setBirth(r.patient.birthDate);
       const warn = r.warnings?.length ? ` · ${t('importWarnings', { n: r.warnings.length })}` : '';
       setImportNote({ text: t('imported', { name: r.patient.name, docs: r.documents, facts: r.facts }) + warn, warnings: r.warnings ?? [] });
-      taskRef.current?.focus();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -265,29 +257,27 @@ export function PatientSearch({ onFound }) {
         <GeminiKeys />
         <p className="login-import-note">{t("importHint")}</p>
 
-        {field(
-          t('patientName'),
-          <input
-            ref={nameRef}
-            type="text"
-            autoComplete="off"
-            value={name}
-            onChange={edit(setName)}
-            onFocus={() => setFocus('name')}
-            onBlur={() => setFocus(null)}
-          />,
-        )}
-        {field(
-          t('birthDate'),
-          <input
-            ref={birthRef}
-            type="date"
-            value={birth}
-            onChange={edit(setBirth)}
-            onFocus={() => setFocus('birth')}
-            onBlur={() => setFocus(null)}
-          />,
-        )}
+        <div className="login-import">
+          <button type="button" disabled={importing || Boolean(step)} onClick={() => folderInput.current?.click()}>
+            {t('importFolder')}
+          </button>
+          <button type="button" disabled={importing || Boolean(step)} onClick={() => filesInput.current?.click()}>
+            {t('importFiles')}
+          </button>
+          <input ref={folderInput} type="file" hidden webkitdirectory="" onChange={upload} />
+          <input ref={filesInput} type="file" hidden multiple accept=".json,application/json" onChange={upload} />
+        </div>
+        <p className="login-import-note" role="status" title={importNote?.warnings.join(' · ') || undefined}>
+          {importing ? (
+            <>
+              <span className="login-spinner login-spinner--dark" aria-hidden="true" />
+              {t('importing')}
+            </>
+          ) : (
+            importNote?.text ?? ''
+          )}
+        </p>
+
         {field(
           t('roleTask'),
           <textarea
@@ -317,26 +307,6 @@ export function PatientSearch({ onFound }) {
           )}
         </button>
 
-        <div className="login-import">
-          <button type="button" disabled={importing || Boolean(step)} onClick={() => folderInput.current?.click()}>
-            {t('importFolder')}
-          </button>
-          <button type="button" disabled={importing || Boolean(step)} onClick={() => filesInput.current?.click()}>
-            {t('importFiles')}
-          </button>
-          <input ref={folderInput} type="file" hidden webkitdirectory="" onChange={upload} />
-          <input ref={filesInput} type="file" hidden multiple accept=".json,application/json" onChange={upload} />
-        </div>
-        <p className="login-import-note" role="status" title={importNote?.warnings.join(' · ') || undefined}>
-          {importing ? (
-            <>
-              <span className="login-spinner login-spinner--dark" aria-hidden="true" />
-              {t('importing')}
-            </>
-          ) : (
-            importNote?.text ?? t('importHint')
-          )}
-        </p>
       </form>
     </div>
   );
